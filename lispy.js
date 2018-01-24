@@ -1,36 +1,42 @@
 // Lisp interpreter project 22/01/2018 13:15
+function parseAble (input) {
+  input = input.replace(/\(/g, ' ( ')
+  input = input.replace(/\)/g, ' ) ')
+  input = input.split(' ')
+  input = input.filter(function (item) { return item !== ' ' && item !== '' })
+  return input
+}
 
-function parseSomething (input) {
+const env = {'+': plus (a, b) => { return a + b }}
+console.log(env['+']plus (1, 2))
+
+function parseLisp (input) {
   if (input[0] === '(') {
     let parseOut = [], x
-    input = input.substr(1)
+    input = input.slice(1)
     while (input[0] !== ')') {
-      if (parseSpace(input) !== null) {
-        input = parseSpace(input)[1]
-      }
-      // console.log(parseOut)
       if (input[0] === '(') {
-        let result = parseSomething(input)
-        result = evaluator(result)
-        parseOut.push(String(result[0]))
+        let result = parseLisp(input)
+        parseOut.push(result[0])
         input = result[1]
         continue
       }
       parseOut.push(input[0])
-      input = input.substr(1)
+      input = input.slice(1)
     }
-    return [parseOut, input.substr(1)]
+    x = [parseOut, input.slice(1)]
+    return x
   }
   return null
 }
 
 function evaluator (input) {  // [operator, arguments*]
-  let temp = input[0].slice(2), result = input[0][1]
+  let temp = input.slice(1), result = input[1]
   for (let x of temp) {
-    result += ' ' + input[0][0] + ' ' + x
+    result += ' ' + input[0] + ' ' + x
   }
   result
-  return [eval(result), input[1]]
+  return [eval(result)]
 }
 
 function parseSpace (input) {
@@ -41,4 +47,4 @@ function parseSpace (input) {
   return null
 }
 
-console.log(evaluator(parseSomething('(+ 1 (* 2 (+ 1 3)))')))
+// console.log(parseAble('(+ (* 3 2)  1 ) abcd'))
