@@ -7,44 +7,49 @@ function parseAble (input) {
   return input
 }
 
-const env = {'+': plus (a, b) => { return a + b }}
-console.log(env['+']plus (1, 2))
+const env = {'+': (array) => { return array.reduce((a, b) => Number(a) + Number(b)) },
+  '-': (array) => { return array.reduce((a, b) => Number(a) - Number(b)) },
+  '*': (array) => { return array.reduce((a, b) => Number(a) * Number(b)) },
+  '/': (array) => { return array.reduce((a, b) => Number(a) / Number(b)) },
+  '>': (array) => { return array.reduce((a, b) => Number(a) > Number(b)) },
+  '<': (array) => { return array.reduce((a, b) => Number(a) < Number(b)) },
+  '>=': (array) => { return array.reduce((a, b) => Number(a) >= Number(b)) },
+  '<=': (array) => { return array.reduce((a, b) => Number(a) <= Number(b)) },
+  '=': (array) => { return array.reduce((a, b) => Number(a) == Number(b)) },
+  'abs': (a) => { return a }}
 
 function parseLisp (input) {
-  if (input[0] === '(') {
-    let parseOut = [], x
-    input = input.slice(1)
-    while (input[0] !== ')') {
+  if (typeof (input) === 'string') {
+    input = parseAble(input)
+  }
+  if (input[0] === '(' && input[input.length - 1] === ')') {
+    let parseOut = [], result, ops, i = 0
+    ops = input[1]
+    input = input.slice(2)
+    input = input.slice(0, input.length - 1)
+    while (input.length !== 0) {
       if (input[0] === '(') {
-        let result = parseLisp(input)
-        parseOut.push(result[0])
-        input = result[1]
-        continue
+        if (parseLisp(input).includes('#Error')) {
+          return parseLisp(input)
+        } else {
+          let out = parseLisp(input)
+          parseOut.push(out[0])
+          input = out[1]
+          continue
+        }
       }
       parseOut.push(input[0])
       input = input.slice(1)
     }
-    x = [parseOut, input.slice(1)]
-    return x
+    result = evaluator(ops, parseOut)
+    return [result, input.slice(1)]
   }
-  return null
+  // return err('parenthesis')
+  throw new Error('Bad/Unbalanced parenthesis in the input')
 }
 
-function evaluator (input) {  // [operator, arguments*]
-  let temp = input.slice(1), result = input[1]
-  for (let x of temp) {
-    result += ' ' + input[0] + ' ' + x
-  }
-  result
-  return [eval(result)]
+function evaluator (ops, array) {  // (operation , [arguments+])
+  return env[ops](array)
 }
 
-function parseSpace (input) {
-  let reg = /^(\s+)/, parseOut = input.match(reg)
-  if (parseOut) {
-    return [parseOut[0], input.substring(parseOut[0].length)]
-  }
-  return null
-}
-
-// console.log(parseAble('(+ (* 3 2)  1 ) abcd'))
+console.log(parseLisp('(+ 1.6 (+ 7.8 2.3)'))
