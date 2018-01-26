@@ -1,7 +1,8 @@
+const interpreter = require('./lispy.js')
 
 const fs = require('fs')
 
-fs.readFile('./test.js', 'utf-8', (err, data) => {
+fs.readFile('./test/test.ss', 'utf-8', (err, data) => {
   if (err) throw err
-  console.log(data)
+  console.log(interpreter.interpret(data))
 })
