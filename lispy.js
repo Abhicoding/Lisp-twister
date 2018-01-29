@@ -25,10 +25,14 @@ const lib = {'+': (array) => { return array.reduce((a, b) => Number(a) + Number(
   'max': (array) => { return Math.max.apply(null, array.map(Number)) },
   'min': (array) => { return Math.min.apply(null, array.map(Number)) },
   'begin': [],
-  'print': (input) => { return console.log(input) }
-  // 'lambda':
+  'print': (input) => { return console.log(input) },
+  'if': (array) => {
+    if (array[0] === true) {
+      return array[1]
+    }
+    return array[2]
+  }
 }
-
 function parseLisp (input) {    // (lisp expression in string)
   if (typeof (input) === 'string') {
     input = parseAble(input)
@@ -37,48 +41,32 @@ function parseLisp (input) {    // (lisp expression in string)
     let parseOut = [], result, ops, i = 0
     ops = input[1]
     input = input.slice(2)
-    input = input.slice(0, input.length - 1)
-    console.log(input)
-    while (input.length !== 0) {
+    while (input.length !== 0 && input[0] !== ')') {
       if (input[0] === '(') {       // Encounter Lisp Expression
         let out = parseLisp(input)
         parseOut.push(out[0])
         input = out[1]
         continue
       }
-      if (input[0] === "\'") {    // Encounter Lisp Array
-        let temp = []
-        input = input.slice(2)
-        while (input[0] !== ')') {
-          temp.push(input[0])
-          input = input.slice(1)
-        }
-        input = input.slice(1)
-        parseOut.push(temp)
-      }
       parseOut.push(input[0])
       input = input.slice(1)
     }
-    result = evaluator(ops, parseOut)
-    if (input.slice(1) == '') {
-      return result
+    if (input.length === 0) {
+      throw new Error('Bad/Unbalanced parenthesis in the input')
     }
+    result = evaluator(ops, parseOut)
     return [result, input.slice(1)]
   }
   throw new Error('Bad/Unbalanced parenthesis in the input')
 }
 
 function evaluator (ops, array) {  // (operation , [arguments+])
-  if (ops == 'define') {
+  if (ops === 'define') {
     return lib[array[1]] = array[2]
-  }
-  if (ops == 'if') {
-    console.log(array)
-    return array
   }
   return lib[ops](array)
 }
 
-exports.interpret = parseLisp
-console.log(parseLisp('(> (* 11 11) 120)'))
+// exports.interpret = parseLisp
+console.log(parseLisp('(if (< 2 1) (+ 2 3) (+ 2 1))'))
 // console.log(parseLisp('(if (> (* 11 11) 120) 1 0)'))
