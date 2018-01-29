@@ -73,17 +73,23 @@ function parseLisp (input) {    // (lisp expression in string)
 
 function evaluator (ops, array) {  // (operation , [arguments+])
   if (ops in lib['mathops']) {
+    let cloneArray = []
     for (let x of array) {
       if (isNaN(Number(x))) {
+        if (x in userdef) {
+          cloneArray.push(userdef[x])
+          continue
+        }
         console.log('Error: execute: unbound symbol: ' + x + ' []')
         throw new Error()
       }
+      cloneArray.push(x)
     }
-    return lib['mathops'][ops](array)
+    return lib['mathops'][ops](cloneArray)
   }
   return lib[ops](array)
 }
 
 // exports.interpret = parseLisp
-console.log(parseLisp('(+ 1 2)'))
+console.log(parseLisp('(begin (define x 2) (* x x))'))
 // console.log(parseLisp('(if (> (* 11 11) 120) 1 0)'))
