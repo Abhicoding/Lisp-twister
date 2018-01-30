@@ -126,22 +126,29 @@ function exPar (input) {
     let ops = input.match(reg)
     input = input.substr(ops.length)
     if (ops in lib) {
-      let arr = [], res
+      let arr = [], res1
       while (input[0] !== ')' && input.length !== 0) {
         if (spcPar(input)) {
           input = spcPar(input)[1]
+        	continue
+        }
+        if (input[0] === '(') {
+        	let res2 = exPar(input)
+        	arr.push(res2[0])
+	        input = res2[1]
+	        continue
         }
         res = atomParser(input)(input)
         arr.push(res[0])
         input = res[1]
       }
-      return evaluator(ops, arr)
+      return [evaluator(ops, arr), input.substr(1)]
     } return null
     ops = input[0]
   } return null
 }
 
-console.log(exPar('(> 1 2'))
+console.log(exPar('(begin (+ 1 2) (+ 2 3))'))
 
 function evaluator (ops, array) {  // (operation , [arguments+])
   return lib[ops](array)
