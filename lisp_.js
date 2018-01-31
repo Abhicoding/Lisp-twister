@@ -1,4 +1,4 @@
-const atomParser = factoryParser([numParser, boolParser, stringParser, exprParser])		//, exprParser
+const atomParser = factoryParser([numParser, boolParser, stringParser, exprParser])   //, exprParser
 
 function factoryParser (args) {
   return function (input) {
@@ -11,7 +11,7 @@ function factoryParser (args) {
   }
 }
 
-function numParser (input) {				// parses numbers
+function numParser (input) {        // parses numbers
   let reg = /^(\-?\d+(\.\d+)?([eE][+-]?\d+)?)/, parseOut = input.match(reg)
   if (parseOut) {
     return [Number(parseOut[0]), input.slice(parseOut[0].length)]
@@ -19,7 +19,7 @@ function numParser (input) {				// parses numbers
   return null
 }
 
-function boolParser (input) {				// parses booleans
+function boolParser (input) {       // parses booleans
   if (input.substr(0, 2) === '#t') {
     return [true, input.substr(2)]
   } else if (input.substr(0, 2) === '#f') {
@@ -28,7 +28,7 @@ function boolParser (input) {				// parses booleans
   return null
 }
 
-function stringParser (input) {				// parses strings
+function stringParser (input) {       // parses strings
   let reg = /^\'\S+/, parseOut = input.match(reg)
   if (parseOut) {
     return [parseOut[0].slice(1), input.slice(parseOut[0].length)]
@@ -36,7 +36,7 @@ function stringParser (input) {				// parses strings
   return null
 }
 
-function spaceParser (input) {			// parses spaces
+function spaceParser (input) {      // parses spaces
   let reg = /^\s+/, parseOut = input.match(reg)
   if (parseOut) {
     return [parseOut[0].slice(1), input.slice(parseOut[0].length)]
@@ -71,9 +71,9 @@ const lib = { '+': (array) => { return array.reduce((a, b) => a + b) },
   },
   'define': (array) => {
     if (array.length === 1) {
-      return userdef[array[0]] = undefined
+      userdef[array[0]] = undefined
     }
-    return userdef[array[0]] = array[1]
+    userdef[array[0]] = array[1]
   },
   'lambda': (array) => {}
 }
@@ -86,30 +86,40 @@ function exprParser (input) {  // parses Expressions
     if (spaceParser(input)) {
       input = spaceParser(input)[1]
     }
-    let reg = /\S+/
+    let reg = /^[^)\s]+/
     let ops = input.match(reg)[0]
     input = input.substr(ops.length)
     if (ops in lib) {
-      let arr = [], res1
+      let arr = [], res
       while (input[0] !== ')' && input.length !== 0) {
+        // console.log(numParser(input) === null, input, userdef)
         if (spaceParser(input)) {
           input = spaceParser(input)[1]
-        	continue
+          continue
         }
         if (atomParser(input) !== null) {
-	        res = atomParser(input)(input)
-	        arr.push(res[0])
-	        input = res[1]
-      	}
-      }
-      return [evaluator(ops, arr), input.substr(1)]
+          res = atomParser(input)(input)
+          arr.push(res[0])
+          input = res[1]
+          continue
+        }
+        let varName = input.match(reg)[0]
+        input = input.substr(varName.length)
+        if (varName in userdef) {
+          arr.push(userdef[varName])
+          continue
+        }
+        if (ops === 'define') {
+          arr.push(varName)
+          continue
+        } return null
+      } return [evaluator(ops, arr), input.substr(1)]
     } return null
-    ops = input[0]
   } return null
 }
 
-console.log(exprParser('(if #f (* 2 3) (+ 4 1))'))
-
+console.log(exprParser('(begin (define r 3) (* r r)'))
+// console.log(exprParser('(+ 1 3)'))
 function evaluator (ops, array) {  // (operation , [arguments+])
   return lib[ops](array)
 }
