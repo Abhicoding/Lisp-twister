@@ -1,4 +1,4 @@
-const atomParser = factoryParser([numParser, boolParser, stringParser, exprParser])   //, exprParser
+const atomParser = factoryParser([numParser, boolParser, stringParser, exprEval])   //, exprEval
 
 function factoryParser (args) {
   return function (input) {
@@ -36,12 +36,34 @@ function stringParser (input) {       // parses strings
   return null
 }
 
+function exprParser(input) { //parses expressions
+  if (input[0] === '('){
+    let parseOut = input[0]
+    input = input.substr(1)
+    while (input[0] !== ')'){
+      if (input[0] === '('){
+        let res = exprParser(input)
+        parseOut += res[0]
+        input = res[1]
+      }
+      parseOut += input[0]
+      input = input.substr(1)
+    }
+    parseOut += input[0]
+    return [parseOut, input.substr(1)]
+  } return null
+}
+
 function spaceParser (input) {      // parses spaces
   let reg = /^\s+/, parseOut = input.match(reg)
   if (parseOut) {
     return [parseOut[0].slice(1), input.slice(parseOut[0].length)]
   }
   return null
+}
+
+function lambdaParser(input) {      //parses and stores lambda defined functions
+  // body...
 }
 
 const lib = { '+': (array) => { return array.reduce((a, b) => a + b) },
@@ -75,12 +97,17 @@ const lib = { '+': (array) => { return array.reduce((a, b) => a + b) },
     }
     userdef[array[0]] = array[1]
   },
-  'lambda': (array) => {}
+  'lambda': (array) => return function(input) {
+    for (let x in array[0]){
+      userdef[x] = undefined
+    }
+    return exprEval(array[1])
+  }
 }
 
 const userdef = {}
 
-function exprParser (input) {  // parses Expressions
+function exprEval (input) {  // parses Expressions
   if (input[0] === '(') {
     input = input.substr(1)
     if (spaceParser(input)) {
@@ -92,10 +119,14 @@ function exprParser (input) {  // parses Expressions
     if (ops in lib) {
       let arr = [], res
       while (input[0] !== ')' && input.length !== 0) {
-        // console.log(numParser(input) === null, input, userdef)
+        console.log(arr, ops)
         if (spaceParser(input)) {
           input = spaceParser(input)[1]
           continue
+        }
+        if (ops === 'lambda'){
+           input = lambdaParser(input)[2]
+           continue       
         }
         if (atomParser(input) !== null) {
           res = atomParser(input)(input)
@@ -113,15 +144,20 @@ function exprParser (input) {  // parses Expressions
           arr.push(varName)
           continue
         } return null
-      } return [evaluator(ops, arr), input.substr(1)]
+      } return [eval(ops, arr), input.substr(1)]
     } return null
   } return null
 }
 
-console.log(exprParser('(begin (define r 3) (* r r)'))
-// console.log(exprParser('(+ 1 3)'))
-function evaluator (ops, array) {  // (operation , [arguments+])
+
+function eval (ops, array) {  // (operation , [arguments+])
   return lib[ops](array)
 }
 
-// console.log(exprParser('(+ abcd$  (- asd) sac) 123'))
+
+
+console.log(exprEval('(define circle-area (lambda (r) (* 3.14 (* r r))))'))
+// console.log(exprEval('(begin (define r 3) (* r r)'))
+// console.log(exprEval('(+ 1 3)'))
+// console.log(exprEval('(if (> 3 4) (+ 1 2) (* 2 2))'))
+// console.log(exprEval('(+ abcd$  (- asd) sac) 123'))
