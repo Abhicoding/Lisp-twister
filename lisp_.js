@@ -185,10 +185,26 @@ function eval (ops, array) {  // (operation , [arguments+])
   return lib[ops](array)
 }
 
+class scope {
+  constructor (args, values, outer = lib){
+    this.args = args
+    this.values = values
+    this.outer = outer
+    let j = Math.min(args.length, values.length), contain = {}
+
+    for (let i = 0; i < j ; i++){
+      contain[args[i]] = values[i]
+    }
+    this.inner = Object.assign(outer, contain)
+  }
+}
+
+var env = new scope(['a', 'b'], [1], lib)
+console.log(env.inner)
 //console.log(exprParser('(1 2 3 (4 5 6))'))
 
 //console.log(exprEval('(begin (define r 2) (* r r))'))  //, 
-console.log(exprEval('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
+//console.log(exprEval('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
 // console.log(exprEval('(begin (define r 3) (* r r)'))
 // console.log(exprEval('(+ 1 3)'))
 // console.log(exprEval('(if (> 3 4) (+ 1 2) (* 2 2))'))
