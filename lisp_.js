@@ -44,7 +44,7 @@ function spaceParser (input) {  // parses spaces
   return null
 }
 
-function exprParser(input){
+function exprParser(input){ //parses out string upto maximum balanced parenthesis
   if (input[0] === '('){
     let parseOut = input[0]
     input = input.substr(1)
@@ -82,54 +82,78 @@ function lambdaParser(input) {  //parses and returns arguments for defining lamb
   res2 = exprParser(input)
   exp = res2[0]
   input = res2[1]
-  //console.log([arr, exp, input], '###')
   return [arr, exp, input]
 }
 
-const lib = { '+': (array) => { return array.reduce((a, b) => a + b) },
-  '-': (array) => { return array.reduce((a, b) => a - b) },
-  '*': (array) => { return array.reduce((a, b) => a * b) },
-  '/': (array) => { return array.reduce((a, b) => a / b) },
-  '>': (array) => { return array.reduce((a, b) => a > b) },
-  '<': (array) => { return array.reduce((a, b) => a < b) },
-  '>=': (array) => { return array.reduce((a, b) => a >= b) },
-  '<=': (array) => { return array.reduce((a, b) => a <= b) },
-  '=': (array) => { return array.reduce((a, b) => a == b) },
-  'equal?': (array) => { return array.reduce((a, b) => a == b) },
+class scope {
+  constructor (args, values, outer = lib){
+    this.args = args
+    this.values = values
+    this.outer = outer
+    
+  }
+  get inner(){
+    let j = Math.min(this.args.length, this.values.length), contain = {}
+    for (let i = 0; i < j ; i++){
+      contain[this.args[i]] = this.values[i]
+    }
+    return Object.assign(contain, this.outer)
+  }
+  find(input){
+    if(input in this.inner){
+      return this.inner[input]
+    }
+    return this.outer[input]
+  }
+}
+
+const lib = { '+': array => array.reduce((a, b) => a + b) ,
+  '-': array =>  array.reduce((a, b) => a - b) ,
+  '*': array =>  array.reduce((a, b) => a * b) ,
+  '/': array => array.reduce((a, b) => a / b) ,
+  '>': array => array.reduce((a, b) => a > b) ,
+  '<': array => array.reduce((a, b) => a < b) ,
+  '>=': array => array.reduce((a, b) => a >= b) ,
+  '<=': array => array.reduce((a, b) => a <= b) ,
+  '=': array => array.reduce((a, b) => a == b) ,
+  'equal?': array => array.reduce((a, b) => a == b),
   'abs': (a) => {
     if (a.length == 1) {
       return Math.abs(a)
     } else { throw new Error('Wrong number of arguments. Need exactly 1') }
   },
-  'max': (array) => { return Math.max.apply(null, array.map(Number)) },
-  'min': (array) => { return Math.min.apply(null, array.map(Number)) },
-  'begin': (array) => { return array.pop() },
-  'print': (array) => { return console.log(array.join('')) },
-  'if': (array) => {
+  'max': array => Math.max.apply(null, array.map(Number)) ,
+  'min': array => Math.min.apply(null, array.map(Number)) ,
+  'begin': array => array.pop() ,
+  'print': array => console.log(array.join('')) ,
+  'if': array => {
     if (array[0] === true) {
       return array[1]
     }
     return array[2]
   },
-  'define': (array) => {
+  'define': (array, env) => {
+    let local = new scope ([array[0]], [array[1]], env)
+    console.log(array, "inside")
     if (array.length === 1) {
-      userdef[array[0]] = undefined
+      local.inner[array[0]] = undefined
+      return local
     }
-    userdef[array[0]] = array[1]
+    local[array[0]] = array[1]
+    return local
   },
-  'lambda': (array) => {return function(input) {
+  'lambda': array => function(input) {
     for (let i in array[0]){
       userdef[array[0][i]] = input[i]
     }
-    console.log(array[0], '***')
-    return exprEval(array[1])
+    return exprEval(array[1])[0]
   }
-}}
+}
 
-const userdef = {}
+const global = new scope([], [], lib)
+//const userdef = {}
 
-function exprEval (input) {  // parses Expressions
-  //console.log(input)
+function exprEval (input, env = global) {  // parses Expressions
   if (input[0] === '(') {
     input = input.substr(1)
     if (spaceParser(input)) {
@@ -138,10 +162,9 @@ function exprEval (input) {  // parses Expressions
     let reg = /^[^)\s]+/
     let ops = input.match(reg)[0]
     input = input.substr(ops.length)
-    if (ops in lib || ops in userdef) {
+    if (ops in env.inner || ops in env.outer) {
       let arr = [], res
       while (input[0] !== ')' && input.length !== 0) {
-        //console.log(ops, "^", arr, "^",input)
         if (spaceParser(input)) {
           input = spaceParser(input)[1]
           continue
@@ -150,46 +173,120 @@ function exprEval (input) {  // parses Expressions
            let out = lambdaParser(input)
            arr = arr.concat(out.slice(0, 2))
            input = out[2]
-           //console.log(arr.concat(out.slice(0, 2)), "arrarrarr", input)
            continue
         }
         if (atomParser(input) !== null) {
           res = atomParser(input)(input)
+          //console.log(res, arr, '***')
           arr.push(res[0])
           input = res[1]
           continue
         }
         let varName = input.match(reg)[0]
         input = input.substr(varName.length)
-        if (varName in userdef) {
-          arr.push(userdef[varName])
-          continue
-        }
+        arr.push(env.find(varName))
         if(ops === 'define'){
           arr.push(varName)
           continue
         }  
       }
-      console.log(ops, arr, "here") 
-      return [eval(ops, arr), input.substr(1)]
-    } return null
-  } return null
+      //console.log([eval(ops, arr, env), input.substr(1)])
+      return [eval(ops, arr, env), input.substr(1), env]
+    } 
+    return null
+  } 
+  return null
 }
-
-
+/*
 function eval (ops, array) {  // (operation , [arguments+])
-  console.log(ops, array, "$")
   if (ops in userdef){
     return userdef[ops](array)
   }
   return lib[ops](array)
+}*/
+
+function eval (ops, array, env) {  // (operation , [arguments+])
+    if (['define', 'lambda'].includes(ops)){
+      console.log(array, "here")
+      return env.find(ops)(array, env)
+    }
+    return env.find(ops)(array)
 }
 
-//console.log(exprParser('(1 2 3 (4 5 6))'))
+function lisp(input){   // initiation
+  console.log(input)
+  return atomParser(input)(input)[0]
+}
 
-//console.log(exprEval('(begin (define r 2) (* r r))'))  //, 
-console.log(exprEval('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
-// console.log(exprEval('(begin (define r 3) (* r r)'))
-// console.log(exprEval('(+ 1 3)'))
-// console.log(exprEval('(if (> 3 4) (+ 1 2) (* 2 2))'))
-// console.log(exprEval('(+ abcd$  (- asd) sac) 123'))
+
+//console.log(exprEval('(define x 2) '))
+//var envr = new scope(['a', 'b'], [1, 2], {'z': 99})
+//console.log(envr.inner, envr.outer, envr.find('z'), envr.find('a'))
+
+//console.log(exprEval('(+ 3 4)'))
+//console.log(exprParser('(1 2 3 (4 5 6))'))
+//console.log(global)
+console.log(lisp('(begin (define r 2) (* r r))')) 
+//console.log(lisp('(begin (define r 4) (* r r)'))
+//console.log(lisp('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (* 2 3) (circle-area 3))'))
+//console.log(lisp('(- 1 3)'))
+//console.log(lisp('(if (> 3 4) (+ 1 2) (* 2 2))'))
+//console.log(opsExtract('(> 3 4)'))
+//console.log(lisp('(define)'))
+//console.log(lisp('(begin (define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1)))))) (fact 1))'))
+//console.log(lisp('(+)'))
+
+
+
+
+
+/*
+function expressionS (input) {
+  if (input[0] === '(') {
+    let res = opsExtract(input), arr = []
+    let ops = res[0]
+    if (!(ops in ['define', 'lambda'])){
+      input = res[1]
+      while (input[0] != ')' && input.length !== 0){
+        if (spaceParser(input)){
+          input = spaceParser(input)[1]
+        }
+        if (varName in env.inner) {
+          arr.push(env.inner[varName])
+          continue
+        }
+        res = atomParser(input)(input)
+        arr.push(res[0])
+        input = res[1]
+      } 
+      return [eval(ops, arr), input.substr(1)]
+    }
+    return null
+  } 
+  return null
+}
+
+function specialExp(argument, env) {
+  if (input[0] === '(') {
+    let res = opsExtract(input), arr = []
+    let ops = res[0]
+    if (ops in ['define', 'lambda']){
+      input = res[1]
+      while (input !== ')' && input.length !== 0){
+        if (spaceParser(input)){
+          input = spaceParser(input)[1]
+        }
+        if (ops === 'lambda'){
+             let out = lambdaParser(input)
+             arr = arr.concat(out.slice(0, 2))
+             input = out[2]
+        } else {
+
+
+        }
+      }
+    }
+    return null
+  } 
+}*/
+
