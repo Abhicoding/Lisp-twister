@@ -245,7 +245,7 @@ function expressionS (input) {
   if (input[0] === '(') {
     let res = opsExtract(input), arr = []
     let ops = res[0]
-    if (!(ops in ['define', 'lambda'])){
+    if (!(['define', 'lambda']).includes(ops)){
       input = res[1]
       while (input[0] != ')' && input.length !== 0){
         if (spaceParser(input)){
@@ -259,18 +259,18 @@ function expressionS (input) {
         arr.push(res[0])
         input = res[1]
       } 
-      return [eval(ops, arr), input.substr(1)]
+      return [eval(ops, arr, env), input.substr(1), env]
     }
     return null
   } 
   return null
 }
 
-function specialExp(argument, env) {
+function specialExp(input, env) {
   if (input[0] === '(') {
     let res = opsExtract(input), arr = []
     let ops = res[0]
-    if (ops in ['define', 'lambda']){
+    if (['define', 'lambda'].includes(ops)){
       input = res[1]
       while (input !== ')' && input.length !== 0){
         if (spaceParser(input)){
@@ -280,13 +280,19 @@ function specialExp(argument, env) {
              let out = lambdaParser(input)
              arr = arr.concat(out.slice(0, 2))
              input = out[2]
-        } else {
-
-
         }
-      }
+        let varName = input.match(reg)[0]
+        input = input.substr(varName.length)
+        arr.push(env.find(varName))
+        if(ops === 'define'){
+          arr.push(varName)
+          continue
+        }
+      } 
+      return [eval(ops, arr, env), input.substr(1), env]
     }
     return null
   } 
-}*/
+}
+*/
 
