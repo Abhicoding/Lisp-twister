@@ -102,8 +102,10 @@ class scope {
   find(input){
     if(input in this.inner){
       return this.inner[input]
-    }
+    } else if (input in this.outer) {
     return this.outer[input]
+    } 
+    return null
   }
 }
 
@@ -232,6 +234,16 @@ function lambdaExp(args, env=global) {
   }
 }
 
-console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
+function userDef (input, env) {
+  let reg = /[^\(\s\)]+/, user = input.match(reg)[0]
+  input = input.substr(user.length)
+  if (env.find(user) !== null){
+    return [env.find(user), input, env]
+  } 
+  return null
+}
 
+
+//console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
+console.log(userDef('<= cat)', global))
 //console.log(expression('(define r 4)', global))
