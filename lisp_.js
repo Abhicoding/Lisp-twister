@@ -1,4 +1,4 @@
-const atomParser = factoryParser([numParser, boolParser, stringParser, exprEval])
+const atomParser = factoryParser([numParser, boolParser, stringParser/*, expressionS*/])
 
 function factoryParser (args) {
   return function (input) {
@@ -66,8 +66,8 @@ function exprParser(input){ //parses out string upto maximum balanced parenthesi
 function lambdaParser(input) {  //parses and returns arguments for defining lambda
   let arr=[], res1, res2, exp
   input= input.substr(1)
-  while(input[0] !== ')'){
-    if(spaceParser(input)){
+  while (input[0] !== ')'){
+    if (spaceParser(input)){
       input = spaceParser(input)[1]
     }
     let reg1 = /[^\s+/)]/
@@ -76,7 +76,7 @@ function lambdaParser(input) {  //parses and returns arguments for defining lamb
     input= input.substr(res1[0].length)
   }
   input = input.substr(1)
-  if(spaceParser(input)){
+  if (spaceParser(input)){
     input = spaceParser(input)[1]
   }
   res2 = exprParser(input)
@@ -125,85 +125,17 @@ const lib = { '+': array => array.reduce((a, b) => a + b) ,
   'max': array => Math.max.apply(null, array.map(Number)) ,
   'min': array => Math.min.apply(null, array.map(Number)) ,
   'begin': array => array.pop() ,
-  'print': array => console.log(array.join('')) ,
+  'print': array => console.log(array.join('')) /*,
   'if': array => {
     if (array[0] === true) {
       return array[1]
     }
     return array[2]
-  },
-  'define': (array, env) => {
-    let local = new scope ([array[0]], [array[1]], env)
-    console.log(array, "inside")
-    if (array.length === 1) {
-      local.inner[array[0]] = undefined
-      return local
-    }
-    local[array[0]] = array[1]
-    return local
-  },
-  'lambda': array => function(input) {
-    for (let i in array[0]){
-      userdef[array[0][i]] = input[i]
-    }
-    return exprEval(array[1])[0]
-  }
+  }*/
 }
 
 const global = new scope([], [], lib)
-//const userdef = {}
 
-function exprEval (input, env = global) {  // parses Expressions
-  if (input[0] === '(') {
-    input = input.substr(1)
-    if (spaceParser(input)) {
-      input = spaceParser(input)[1]
-    }
-    let reg = /^[^)\s]+/
-    let ops = input.match(reg)[0]
-    input = input.substr(ops.length)
-    if (ops in env.inner || ops in env.outer) {
-      let arr = [], res
-      while (input[0] !== ')' && input.length !== 0) {
-        if (spaceParser(input)) {
-          input = spaceParser(input)[1]
-          continue
-        }
-        if (ops === 'lambda'){
-           let out = lambdaParser(input)
-           arr = arr.concat(out.slice(0, 2))
-           input = out[2]
-           continue
-        }
-        if (atomParser(input) !== null) {
-          res = atomParser(input)(input)
-          //console.log(res, arr, '***')
-          arr.push(res[0])
-          input = res[1]
-          continue
-        }
-        let varName = input.match(reg)[0]
-        input = input.substr(varName.length)
-        arr.push(env.find(varName))
-        if(ops === 'define'){
-          arr.push(varName)
-          continue
-        }  
-      }
-      //console.log([eval(ops, arr, env), input.substr(1)])
-      return [eval(ops, arr, env), input.substr(1), env]
-    } 
-    return null
-  } 
-  return null
-}
-/*
-function eval (ops, array) {  // (operation , [arguments+])
-  if (ops in userdef){
-    return userdef[ops](array)
-  }
-  return lib[ops](array)
-}*/
 
 function eval (ops, array, env) {  // (operation , [arguments+])
     if (['define', 'lambda'].includes(ops)){
@@ -218,16 +150,34 @@ function lisp(input){   // initiation
   return atomParser(input)(input)[0]
 }
 
+function extract (input){
+  let reg = /^\(\s*([^\(\s\)]+)\s*/
+  return [input.match(reg)[1], input.substr(input.match(reg)[0].length)]
+}
+
+function expression (input, env = global) {
+  if (input[0] === '(') {
+    let temp = extract(input), ops = temp[0]
+    input = temp[1]
+    if (ops in env.inner) {
+      temp = s_Expressions(ops, input, env)
+      return temp
+    } else {
+      temp = defineExp(ops, input, env)
+      return temp
+    }
+  } 
+  return null
+}
 
 //console.log(exprEval('(define x 2) '))
 //var envr = new scope(['a', 'b'], [1, 2], {'z': 99})
 //console.log(envr.inner, envr.outer, envr.find('z'), envr.find('a'))
 
-//console.log(exprEval('(+ 3 4)'))
-//console.log(exprParser('(1 2 3 (4 5 6))'))
+//console.log(s_Expressions('(- 3 1)'))
 //console.log(global)
-console.log(lisp('(begin (define r 2) (* r r))')) 
-//console.log(lisp('(begin (define r 4) (* r r)'))
+//console.log(lisp('(begin (define r 2) (* r r))')) 
+//console.log(opsExtract('(define r 4)'))
 //console.log(lisp('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (* 2 3) (circle-area 3))'))
 //console.log(lisp('(- 1 3)'))
 //console.log(lisp('(if (> 3 4) (+ 1 2) (* 2 2))'))
@@ -235,64 +185,43 @@ console.log(lisp('(begin (define r 2) (* r r))'))
 //console.log(lisp('(define)'))
 //console.log(lisp('(begin (define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1)))))) (fact 1))'))
 //console.log(lisp('(+)'))
+//console.log(expression('(define r (+ 1 3))'))
 
 
 
-
-
-/*
-function expressionS (input) {
-  if (input[0] === '(') {
-    let res = opsExtract(input), arr = []
-    let ops = res[0]
-    if (!(['define', 'lambda']).includes(ops)){
-      input = res[1]
-      while (input[0] != ')' && input.length !== 0){
-        if (spaceParser(input)){
-          input = spaceParser(input)[1]
-        }
-        if (varName in env.inner) {
-          arr.push(env.inner[varName])
-          continue
-        }
-        res = atomParser(input)(input)
-        arr.push(res[0])
-        input = res[1]
-      } 
-      return [eval(ops, arr, env), input.substr(1), env]
+function s_Expressions(ops, input, env = global) {
+  let arr = []
+  while (input[0] != ')' && input.length !== 0){
+    if (spaceParser(input)){
+      input = spaceParser(input)[1]
     }
-    return null
-  } 
-  return null
+    else if (atomParser(input)){
+      temp = atomParser(input)(input)
+      arr.push(temp[0])
+      input = temp[1]
+    } 
+  }
+  return [eval(ops, arr, env), input.substr(1)]
 }
 
-function specialExp(input, env) {
-  if (input[0] === '(') {
-    let res = opsExtract(input), arr = []
-    let ops = res[0]
-    if (['define', 'lambda'].includes(ops)){
-      input = res[1]
-      while (input !== ')' && input.length !== 0){
-        if (spaceParser(input)){
-          input = spaceParser(input)[1]
-        }
-        if (ops === 'lambda'){
-             let out = lambdaParser(input)
-             arr = arr.concat(out.slice(0, 2))
-             input = out[2]
-        }
-        let varName = input.match(reg)[0]
-        input = input.substr(varName.length)
-        arr.push(env.find(varName))
-        if(ops === 'define'){
-          arr.push(varName)
-          continue
-        }
-      } 
-      return [eval(ops, arr, env), input.substr(1), env]
-    }
-    return null
-  } 
-}
-*/
 
+function defineExp(ops, input, env) {
+  let result1, result2, arr = []
+  result1 = input.match(/^\(?\s*([^\(\s\)]+)\s*/)  
+  env [result1[0]] = undefined
+  input = input.substr(result1[0].length)
+  if (input[0] !== ')'){
+    result2 = input.match(/(.*)\)$/)
+    input = input.substr(result2[0].length)
+    env [result1[0]] = result2[1]
+  }
+  return env
+}
+
+/*function lambdaExp(input, env) {
+  // body...
+}*/
+
+//console.log(lambdaParser('(a b c) (* a (+ b c)))'))
+
+console.log(expression('(define r 4)', global))
