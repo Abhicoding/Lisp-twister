@@ -1,4 +1,4 @@
-const atomParser = factoryParser([numParser, boolParser, stringParser/*, expressionS*/])
+const atomParser = factoryParser([numParser, boolParser, stringParser, expression])
 
 function factoryParser (args) {
   return function (input) {
@@ -162,8 +162,12 @@ function expression (input, env = global) {
     if (ops in env.inner) {
       temp = s_Expressions(ops, input, env)
       return temp
-    } else {
-      temp = defineExp(ops, input, env)
+    } else if (ops === 'define'){
+      temp = defineExp(input, env)
+      return temp
+    } else if (ops === 'lambda'){
+      input = lambdaParser(input)
+      temp = lambdaExp(input, env)
       return temp
     }
   } 
@@ -205,7 +209,7 @@ function s_Expressions(ops, input, env = global) {
 }
 
 
-function defineExp(ops, input, env) {
+function defineExp(input, env) {
   let result1, result2, arr = []
   result1 = input.match(/^\(?\s*([^\(\s\)]+)\s*/)  
   env [result1[0]] = undefined
@@ -213,15 +217,21 @@ function defineExp(ops, input, env) {
   if (input[0] !== ')'){
     result2 = input.match(/(.*)\)$/)
     input = input.substr(result2[0].length)
-    env [result1[0]] = result2[1]
+    env [result1[0]] = atomParser(result2[1])(result2[1])[0]
   }
   return env
 }
 
-/*function lambdaExp(input, env) {
-  // body...
-}*/
+function lambdaExp(args, env=global) {
+  return function(input, env=global) {
+    let array = args[0], exp = args[1]
+    for (x in input) {
+      env[array[x]] = input[x]
+    }
+    return [atomParser(exp)(exp), env]
+  }
+}
 
-//console.log(lambdaParser('(a b c) (* a (+ b c)))'))
+console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
 
-console.log(expression('(define r 4)', global))
+//console.log(expression('(define r 4)', global))
