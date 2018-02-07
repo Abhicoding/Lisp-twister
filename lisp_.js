@@ -253,9 +253,17 @@ function eval (input, env = global) {
   return eval(input, env)
 }
 
-console.log(eval('(+ 2 2)'))
+
 // console.log(userDef(''))
 
 // console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
 // console.log(expression('(* r r)', global))
 // console.log(expression('(define r 4)', global))
+//console.log(exprParser('(1 2 3 (4 5 6))'))
+
+//console.log(exprEval('(begin (define r 2) (* r r))'))  //, 
+//console.log(exprEval('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
+// console.log(exprEval('(begin (define r 3) (* r r)'))
+// console.log(exprEval('(+ 1 3)'))
+// console.log(exprEval('(if (> 3 4) (+ 1 2) (* 2 2))'))
+// console.log(exprEval('(+ abcd$  (- asd) sac) 123'))
