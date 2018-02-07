@@ -144,14 +144,11 @@ function lisp (input) {   // initiation
   return atomParser(input)(input)[0]
 }
 
-function extract (input) {
-  let reg = /^\(\s*([^\(\s\)]+)\s*/
-  return [input.match(reg)[1], input.substr(input.match(reg)[0].length)]
-}
-
 function expression (input, env = global) {
   if (input[0] === '(') {
-    let temp = extract(input), ops = temp[0]
+    let reg = /^\(\s*([^\(\s\)]+)\s*/
+    let temp = [input.match(reg)[1], input.substr(input.match(reg)[0].length)], 
+    ops = temp[0]
     input = temp[1]
     if (ops in env.inner) {
       temp = s_Expressions(ops, input, env)
@@ -256,7 +253,7 @@ function eval (input, env = global) {
   return eval(input, env)
 }
 
-console.log(eval('(+ r 2)'))
+console.log(eval('(+ 2 2)'))
 // console.log(userDef(''))
 
 // console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
