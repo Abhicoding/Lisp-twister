@@ -1,16 +1,3 @@
-const atomParser = factoryParser([numParser, boolParser, stringParser, expression, userDef])
-
-function factoryParser (args) {
-  return function (input) {
-    for (let x of args) {
-      if (x(input)) {
-        return x
-      }
-    }
-    return null
-  }
-}
-
 function numParser (input) {  // parses numbers
   let reg = /^(\-?\d+(\.\d+)?([eE][+-]?\d+)?)/, parseOut = input.match(reg)
   if (parseOut) {
@@ -146,7 +133,7 @@ const global = lib
 
 function lisp (input) {   // initiation
   console.log(input)
-  return atomParser(input)(input)[0]
+  return evaluate(input)[0]
 }
 
 function expression (input, env = global) { // Expression evaluateuator
@@ -154,15 +141,14 @@ function expression (input, env = global) { // Expression evaluateuator
     let reg = /\(\s*([^\(\s\)]+)\s*/
     let temp = [input.match(reg)[1], input.substr(input.match(reg)[0].length)],
       ops = temp[0]
+    input = temp[1]
     if (ops in env) {
       return s_Expressions(ops, input, env)
     } else if (ops === 'define') {
-      input = temp[1]
       return defineExp(input, env)
     } else if (ops === 'lambda') {
-      input = temp[1]
       input = lambdaParser(input)
-      console.log(lambdaExp(input, env)([2]))
+      // console.log(lambdaExp(input, env)([2]))
       return lambdaExp(input, env)
     }
   }
@@ -176,7 +162,6 @@ function s_Expressions (ops, input, env = global) { // S- expression handling
       input = spaceParser(input)[1]
     }
     temp = evaluate(input, env)
-    console.log(temp)
     arr.push(temp[0])
     input = temp[1]
   }
@@ -191,7 +176,9 @@ function defineExp (input, env) { // define expression handling
   inner = local([[result1[1]], [undefined]])
   input = input.substr(result1[0].length)
   if (input[0] !== ')') {
-    inner[result1[1]] = atomParser(input)(input)
+    result2 = evaluate(input)
+    inner[result1[1]] = result2[0]
+    input = result2[1]
   }
   env = update([env, inner])
   // console.log(env, 'checking square')
@@ -199,14 +186,14 @@ function defineExp (input, env) { // define expression handling
 }
 
 function lambdaExp (args, env = global) { // lambda expression handling
-  return function (input, env = global) {
+  return [function (input, env = global) {
     inner = local([args[0], input])
     return evaluate(args[1], inner)
-  }
+  }, args[2], env]
 }
 
 function userDef (input, env = global) { // User defined values handling
-  let reg = /[^\(\s\)]+/
+  let reg = /[^\(\s\)]+/, arr
   if (input.match(reg) !== null) {
     let user = input.match(reg)[0]
     input = input.substr(user.length)
@@ -216,9 +203,13 @@ function userDef (input, env = global) { // User defined values handling
   }
   return null
 }
+/*
+function userHelp (input, env = global) {
+
+} */
 
 function evaluate (input, env = global) {   // solves everything
-  let result, array
+  let result
   if (spaceParser(input) !== null) {
     input = spaceParser(input)[1]
   }
@@ -236,11 +227,11 @@ function evaluate (input, env = global) {   // solves everything
   input = result[1]
   return [result[0], input, env]
 }
-// console.log(evaluate('1 3)'))
+// console.log(evaluate('( + 1 3)'))
 // console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
 // console.log(expression('(* r r)'))
-console.log(evaluate('(define square (lambda (r) (* r r))) (square 3)'))
-// console.log(userDef('('))
+// console.log(evaluate('(define square (lambda (r) (* r r))) (square 3)'))
+console.log(lisp('(max 1 2 3)'))
 // console.log(evaluate('(+ 4 5 6)'))
 // console.log(lambdaParser('(r) (* r r)) (+ 1 3)'))
 // console.log(exprevaluate('(begin (define r 2) (* r r))'))  //,
