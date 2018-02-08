@@ -66,7 +66,6 @@ function lambdaParser (input) {  // parses and returns arguments for defining la
   if (spaceParser(input)) {
     input = spaceParser(input)[1]
   }
-  // console.log(input, 'yoyo')
   res2 = exprParser(input)
   exp = res2[0]
   input = res2[1]
@@ -110,9 +109,10 @@ const global = lib
 // const global = new scope([], [], lib) // Initiates global environment
 
 function lisp (input) {   // initiation
+  let result
   input = evaluate(input)
-  while (input[1] !== '') {
-    let result = evaluate(input[1], input[2])
+  while (input !== '') {
+    result = evaluate(input[1], input[2])
     input = result[1]
   }
   return result[0]
@@ -162,7 +162,6 @@ function defineExp (input, env) { // define expression handling
     input = result2[1]
   }
   env = update([env, inner])
-  // inner['square']([10])
   // console.log(inner[result1[1]], 'checking square')
   return ['', input, env]
 }
@@ -187,10 +186,6 @@ function userDef (input, env = global) { // User defined values handling
   }
   return null
 }
-/*
-function userHelp (input, env = global) {
-
-} */
 
 function evaluate (input, env = global) {   // solves everything
   let result
