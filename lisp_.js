@@ -37,9 +37,9 @@ function stringParser (input) {  // parses strings
 }
 
 function spaceParser (input) {  // parses spaces
-  let reg = /^\s+/, parseOut = input.match(reg)
-  if (parseOut) {
-    return [parseOut[0].slice(1), input.slice(parseOut[0].length)]
+  let reg = /^\s+/
+  if (input.match(reg) !== null) {
+    return [input.match(reg)[0].slice(1), input.slice(input.match(reg)[0].length)]
   }
   return null
 }
@@ -75,30 +75,35 @@ function lambdaParser (input) {  // parses and returns arguments for defining la
     arr.push(res1[0])
     input = input.substr(res1[0].length)
   }
+
   input = input.substr(1)
   if (spaceParser(input)) {
     input = spaceParser(input)[1]
   }
+  // console.log(input, 'yoyo')
   res2 = exprParser(input)
   exp = res2[0]
   input = res2[1]
-  return [arr, exp, input]
+  return [arr, exp, input.substr(2)]
 }
 
-class scope {
-  constructor (args, values, outer = lib) {
-    this.args = args
-    this.values = values
-    this.outer = outer
+function update (input) {
+  return Object.assign({}, input[0], input[1])
+}
+
+function local (argument) {
+  let temp = {}
+  for (let x in argument[1]) {
+    temp[argument[x]] = argument[1][x]
   }
-  get inner () {
-    let j = Math.min(this.args.length, this.values.length), contain = {}
-    for (let i = 0; i < j; i++) {
-      contain[this.args[i]] = this.values[i]
-    }
-    return Object.assign(contain, this.outer)
-  }
-  find (input) {
+  return temp
+}
+/*
+scope = function (args, values, outer = lib) {
+  this.args = args
+  this.values = values
+  this.outer = outer
+  this.find = function (input) {
     if (input in this.inner) {
       return this.inner[input]
     } else if (input in this.outer) {
@@ -106,9 +111,16 @@ class scope {
     }
     return null
   }
-}
+  get this.inner () {
+    let j = Math.min(this.args.length, this.values.length), contain = {}
+    for (let i = 0; i < j; i++) {
+      contain[this.args[i]] = this.values[i]
+    }
+    return Object.assign(contain, this.outer)
+  }
+} */
 
-const lib = { '+': array => array.reduce((a, b) => a + b),
+const lib = { '+': array => array.reduce((a, b) => a + b), // Inbuilt function library
   '-': array => array.reduce((a, b) => a - b),
   '*': array => array.reduce((a, b) => a * b),
   '/': array => array.reduce((a, b) => a / b),
@@ -127,45 +139,117 @@ const lib = { '+': array => array.reduce((a, b) => a + b),
   'min': array => Math.min.apply(null, array.map(Number)),
   'begin': array => array.pop(),
   'print': array => console.log(array.join('')),
-  'r': 3
-  /*
-  'if': array => {
-    if (array[0] === true) {
-      return array[1]
-    }
-    return array[2]
-  } */
+  'r': 4
 }
-
-const global = new scope([], [], lib)
+const global = lib
+// const global = new scope([], [], lib) // Initiates global environment
 
 function lisp (input) {   // initiation
   console.log(input)
   return atomParser(input)(input)[0]
 }
 
-function expression (input, env = global) {
+function expression (input, env = global) { // Expression evaluateuator
   if (input[0] === '(') {
-    let reg = /^\(\s*([^\(\s\)]+)\s*/
-    let temp = [input.match(reg)[1], input.substr(input.match(reg)[0].length)], 
-    ops = temp[0]
-    input = temp[1]
-    if (ops in env.inner) {
-      temp = s_Expressions(ops, input, env)
-      return temp
+    let reg = /\(\s*([^\(\s\)]+)\s*/
+    let temp = [input.match(reg)[1], input.substr(input.match(reg)[0].length)],
+      ops = temp[0]
+    if (ops in env) {
+      return s_Expressions(ops, input, env)
     } else if (ops === 'define') {
-      temp = defineExp(input, env)
-      return temp
+      input = temp[1]
+      return defineExp(input, env)
     } else if (ops === 'lambda') {
+      input = temp[1]
       input = lambdaParser(input)
-      temp = lambdaExp(input, env)
-      return temp
+      console.log(lambdaExp(input, env)([2]))
+      return lambdaExp(input, env)
     }
   }
   return null
 }
 
-// console.log(exprEval('(define x 2) '))
+function s_Expressions (ops, input, env = global) { // S- expression handling
+  let arr = []
+  while (input[0] != ')' && input.length !== 0) {
+    if (spaceParser(input)) {
+      input = spaceParser(input)[1]
+    }
+    temp = evaluate(input, env)
+    console.log(temp)
+    arr.push(temp[0])
+    input = temp[1]
+  }
+      // return null
+    // }
+  return [env[ops](arr), input.substr(1), env]
+}
+
+function defineExp (input, env) { // define expression handling
+  let result1, result2, arr = [], inner
+  result1 = input.match(/^\(?\s*([^\(\s\)]+)\s*/)
+  inner = local([[result1[1]], [undefined]])
+  input = input.substr(result1[0].length)
+  if (input[0] !== ')') {
+    inner[result1[1]] = atomParser(input)(input)
+  }
+  env = update([env, inner])
+  // console.log(env, 'checking square')
+  return [undefined, input, env]
+}
+
+function lambdaExp (args, env = global) { // lambda expression handling
+  return function (input, env = global) {
+    inner = local([args[0], input])
+    return evaluate(args[1], inner)
+  }
+}
+
+function userDef (input, env = global) { // User defined values handling
+  let reg = /[^\(\s\)]+/
+  if (input.match(reg) !== null) {
+    let user = input.match(reg)[0]
+    input = input.substr(user.length)
+    if (user in env) {
+      return [env[user], input, env]
+    }
+  }
+  return null
+}
+
+function evaluate (input, env = global) {   // solves everything
+  let result, array
+  if (spaceParser(input) !== null) {
+    input = spaceParser(input)[1]
+  }
+  if (numParser(input) !== null) {
+    result = numParser(input)
+  } else if (boolParser(input) !== null) {
+    result = boolParser(input)
+  } else if (expression(input, env) !== null) {
+    result = expression(input)
+    env = result[2]
+  } else if (userDef(input)) {
+    result = userDef(input)
+    env = result[2]
+  }
+  input = result[1]
+  return [result[0], input, env]
+}
+// console.log(evaluate('1 3)'))
+// console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
+// console.log(expression('(* r r)'))
+console.log(evaluate('(define square (lambda (r) (* r r))) (square 3)'))
+// console.log(userDef('('))
+// console.log(evaluate('(+ 4 5 6)'))
+// console.log(lambdaParser('(r) (* r r)) (+ 1 3)'))
+// console.log(exprevaluate('(begin (define r 2) (* r r))'))  //,
+// console.log(exprevaluate('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
+// console.log(exprevaluate('(begin (define r 3) (* r r)'))
+// console.log(exprevaluate('(if (> 3 4) (+ 1 2) (* 2 2))'))
+// console.log(exprevaluate('(+ abcd$  (- asd) sac) 123'))
+
+// console.log(exprevaluate('(define x 2) '))
 // var envr = new scope(['a', 'b'], [1, 2], {'z': 99})
 // console.log(envr.inner, envr.outer, envr.find('z'), envr.find('a'))
 
@@ -181,89 +265,3 @@ function expression (input, env = global) {
 // console.log(lisp('(begin (define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1)))))) (fact 1))'))
 // console.log(lisp('(+)'))
 // console.log(expression('(define r (+ 1 3))'))
-
-function s_Expressions (ops, input, env = global) {
-  let arr = []
-  while (input[0] != ')' && input.length !== 0) {
-    if (spaceParser(input)) {
-      input = spaceParser(input)[1]
-    } else if (atomParser(input) !== null) {
-      temp = atomParser(input)(input)
-      arr.push(temp[0])
-      input = temp[1]
-    } else {
-      return null
-    }
-  }
-  return [env.find(ops)(arr), input.substr(1), env]
-}
-
-function defineExp (input, env) {
-  let result1, result2, arr = []
-  result1 = input.match(/^\(?\s*([^\(\s\)]+)\s*/)
-  env[result1[0]] = undefined
-  input = input.substr(result1[0].length)
-  if (input[0] !== ')') {
-    result2 = input.match(/(.*)\)$/)
-    input = input.substr(result2[0].length)
-    env[result1[0]] = atomParser(result2[1])(result2[1])[0]
-  }
-  return env
-}
-
-function lambdaExp (args, env = global) {
-  return function (input, env = global) {
-    let array = args[0], exp = args[1]
-    for (x in input) {
-      env[array[x]] = input[x]
-    }
-    return [atomParser(exp)(exp), env]
-  }
-}
-
-function userDef (input, env = global) {
-  let reg = /[^\(\s\)]+/
-  if (input.match(reg) !== null) {
-    user = input.match(reg)[0]
-    input = input.substr(user.length)
-    if (env.find(user) !== null) {
-      return [env.find(user), input, env]
-    }
-  }
-  return null
-}
-
-function eval (input, env = global) {
-  let result, array
-  if (numParser(input) !== null) {
-    result = numParser(input)
-  } else if (boolParser(input) !== null) {
-    result = boolParser(input)
-  } else if (expression(input, env) !== null) {
-    result = expression(input)
-    env = result[2]
-  } else if (userDef(input)) {
-    result = userDef(input)
-    env = result[2]
-  }
-  input = result[1]
-  if (input === '') {
-    return [result[0], input, env]
-  }
-  return eval(input, env)
-}
-
-
-// console.log(userDef(''))
-
-// console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
-// console.log(expression('(* r r)', global))
-// console.log(expression('(define r 4)', global))
-//console.log(exprParser('(1 2 3 (4 5 6))'))
-
-//console.log(exprEval('(begin (define r 2) (* r r))'))  //, 
-//console.log(exprEval('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
-// console.log(exprEval('(begin (define r 3) (* r r)'))
-// console.log(exprEval('(+ 1 3)'))
-// console.log(exprEval('(if (> 3 4) (+ 1 2) (* 2 2))'))
-// console.log(exprEval('(+ abcd$  (- asd) sac) 123'))
