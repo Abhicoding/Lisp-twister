@@ -108,12 +108,10 @@ const global = lib  // Initiates global environment
 
 function lisp (input) {   // Initiates program
   input = programParser(input)
-  let result = input[0]
   while (input[1]) {
-    result = programParser(input[1], input[2])
-    input = result[1]
+    input = programParser(input[1], input[2])
   }
-  return result
+  return input[0]
 }
 
 function expression (input, env = global) { // Expression programParseruator
@@ -123,7 +121,7 @@ function expression (input, env = global) { // Expression programParseruator
       ops = temp[0]
     input = temp[1]
     if (ops in env) {
-      // console.log(sExpressions(ops, input, env)[0], 'in expression')
+      // console.log(sExpressions(ops, input, env), 'in expression')
       return sExpressions(ops, input, env)
     } else if (ops === 'define') {
       return defineExp(input, env)
@@ -188,7 +186,6 @@ function ifExp (input, env = global) {
     return [result[0], input.substr(1), result[2]]
   }
   result = programParser(array[2], env)
-  console.log(result[0], 'inside if')
   return [result[0], input.substr(1), result[2]]
 }
 
@@ -222,7 +219,6 @@ function programParser (input, env = global) {   // solves everything
     result = userDef(input, env)
     env = result[2]
   }
-  // console.log(result[0], "what's going out")
   // console.log(env, input, 'from programParser')
   input = result[1]
   return [result[0], input, env]
@@ -232,7 +228,7 @@ function programParser (input, env = global) {   // solves everything
 console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))
 // console.log(expression('(* r r)'))
 
-// console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
+console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
 
 // console.log(lisp('(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1)))))) (fact 10)'))
 // console.log(lisp('(define twice (lambda (x) (* 2 x))) (twice 7)'))
@@ -247,7 +243,7 @@ console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))
 // var envr = new scope(['a', 'b'], [1, 2], {'z': 99})
 // console.log(envr.inner, envr.outer, envr.find('z'), envr.find('a'))
 
-// console.log(sExpressions('(- 3 1)'))
+console.log(lisp('(- 3 1)'))
 // console.log(global)
 // console.log(lisp('(begin (define r 2) (* r r))'))
 // console.log(opsExtract('(define r 4)'))
