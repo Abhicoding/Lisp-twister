@@ -138,15 +138,15 @@ function expression (input, env = global) { // Expression programParseruator
 
 function sExpressions (ops, input, env = global) { // S- expression handling
   let arr = [], temp
-  // console.log(ops, env['fact'], input)
+  console.log(ops, input)
   while (input[0] !== ')' && input.length !== 0) {
     if (spaceParser(input)) {
       input = spaceParser(input)[1]
     }
     temp = programParser(input, env)
-    // console.log(temp[0], 's_expression')
     arr.push(temp[0])
     input = temp[1]
+    console.log(input, 'Input', env['n'], 's_expression')
   }
   return [env[ops](arr, env), input.substr(1), env]
 }
@@ -169,28 +169,26 @@ function defineExp (input, env) { // define expression handling
 function lambdaExp (args, env = global) { // lambda expression handling
   return [function (input, env = global) {
     let inner = local([args[0], input])
-    // console.log(input)
+    // console.log(input, inner['n'], 'lambdaExp')
     return programParser(args[1], update([env, inner]))[0]
   }, args[2], env]
 }
 
 function ifExp (input, env = global) {
   let array = [], result
-  while (exprParser(input) !== null) {
-    temp = exprParser(input)
-    array.push(temp[0])
-    if (spaceParser(temp[1]) !== null) {
-      input = spaceParser(temp[1])[1]
+  while (input[0] !== ')') {
+    if (spaceParser(input)) {
+      input = spaceParser(input)[1]
     } else {
-      input = temp[1]
+      result = programParser(input, env)
+      array.push(result[0])
+      input = result[1]
     }
   }
-  if (programParser(array[0], env)[0]) {
-    result = programParser(array[1], env)
-    return [result[0], input.substr(1), result[2]]
+  if (array[0]) {
+    return [array[1], input.substr(1), env]
   }
-  result = programParser(array[2], env)
-  return [result[0], input.substr(1), result[2]]
+  return [array[2], input.substr(1), env]
 }
 
 function userDef (input, env = global) { // User defined values handling
@@ -232,14 +230,14 @@ function programParser (input, env = global) {   // solves everything
 // console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))
 // console.log(expression('(* r r)'))
 // console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
-
-console.log(lisp('(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1)))))) (fact 6)'))
+// console.log(lisp('(define fib (lambda (n) (if (< n 2) (* 1 1) (+ (fib (- n 1)) (fib (- n 2)))))) (fib 6)'))
+// console.log(lisp('(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1)))))) (fact 2)'))
 // console.log(lisp('(define twice (lambda (x) (* 2 x))) (twice 7)'))
 // console.log(lambdaParser('(r) (* r r)) (+ 1 3)'))
 // console.log(exprprogramParser('(begin (define r 2) (* r r))'))  //,
 // console.log(exprprogramParser('(begin (define circle-area (lambda (r) (* 3.14 (* r r)))) (circle-area 2))'))
 // console.log(exprprogramParser('(begin (define r 3) (* r r)'))
-// console.log(exprprogramParser('(if (> 3 4) (+ 1 2) (* 2 2))'))
+console.log(lisp('(if (< 3 4) 1 (* 2 2))'))
 // console.log(exprprogramParser('(+ abcd$  (- asd) sac) 123'))
 
 // console.log(exprprogramParser('(define x 2) '))
