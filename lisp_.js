@@ -109,6 +109,7 @@ const global = lib  // Initiates global environment
 function lisp (input) {   // Initiates program
   input = programParser(input)
   while (input[1]) {
+    // console.log(input[2], 'LISP')
     input = programParser(input[1], input[2])
   }
   return input[0]
@@ -137,15 +138,17 @@ function expression (input, env = global) { // Expression programParseruator
 
 function sExpressions (ops, input, env = global) { // S- expression handling
   let arr = [], temp
+  // console.log(ops, env['fact'], input)
   while (input[0] !== ')' && input.length !== 0) {
     if (spaceParser(input)) {
       input = spaceParser(input)[1]
     }
     temp = programParser(input, env)
+    // console.log(temp[0], 's_expression')
     arr.push(temp[0])
     input = temp[1]
   }
-  return [env[ops](arr), input.substr(1), env]
+  return [env[ops](arr, env), input.substr(1), env]
 }
 
 function defineExp (input, env) { // define expression handling
@@ -166,6 +169,7 @@ function defineExp (input, env) { // define expression handling
 function lambdaExp (args, env = global) { // lambda expression handling
   return [function (input, env = global) {
     let inner = local([args[0], input])
+    // console.log(input)
     return programParser(args[1], update([env, inner]))[0]
   }, args[2], env]
 }
@@ -196,6 +200,7 @@ function userDef (input, env = global) { // User defined values handling
     let user = input.match(reg)[0]
     input = input.substr(user.length)
     if (user in env) {
+      // console.log(user, 'in_userdef')
       return [env[user], input, env]
     }
   }
@@ -204,7 +209,7 @@ function userDef (input, env = global) { // User defined values handling
 
 function programParser (input, env = global) {   // solves everything
   let result
-  // console.log(input, 'in_programParser')
+
   if (spaceParser(input) !== null) {
     input = spaceParser(input)[1]
   }
@@ -219,18 +224,16 @@ function programParser (input, env = global) {   // solves everything
     result = userDef(input, env)
     env = result[2]
   }
-  // console.log(env, input, 'from programParser')
   input = result[1]
   return [result[0], input, env]
 }
 // console.log(programParser('( + 1 3)'))
 // console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
-console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))
+// console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))
 // console.log(expression('(* r r)'))
+// console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
 
-console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
-
-// console.log(lisp('(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1)))))) (fact 10)'))
+console.log(lisp('(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1)))))) (fact 6)'))
 // console.log(lisp('(define twice (lambda (x) (* 2 x))) (twice 7)'))
 // console.log(lambdaParser('(r) (* r r)) (+ 1 3)'))
 // console.log(exprprogramParser('(begin (define r 2) (* r r))'))  //,
@@ -243,7 +246,7 @@ console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
 // var envr = new scope(['a', 'b'], [1, 2], {'z': 99})
 // console.log(envr.inner, envr.outer, envr.find('z'), envr.find('a'))
 
-console.log(lisp('(- 3 1)'))
+// console.log(lisp('(- 3 1)'))
 // console.log(global)
 // console.log(lisp('(begin (define r 2) (* r r))'))
 // console.log(opsExtract('(define r 4)'))
