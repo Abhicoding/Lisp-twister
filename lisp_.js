@@ -67,7 +67,9 @@ function lambdaParser (input) {  // parses and returns arguments for defining la
     input = spaceParser(input)[1]
   }
   res2 = exprParser(input)
-  [exp, input] = res2
+  // console.log(res2, 'lambdaParser')
+  exp = res2[0]
+  input = res2[1]
   return [arr, exp, input.substr(2)]
 }
 
@@ -116,11 +118,12 @@ function lisp (input) {   // Initiates program
 
 function expression (input, env = globalScope) { // Expression programParseruator
   if (input[0] === '(') {
+    // console.log(input, 'expression_ops')
     let reg = /\(\s*([^\(\s\)]+)\s*/
     let temp = [input.match(reg)[1], input.substr(input.match(reg)[0].length)],
       ops = temp[0]
-    // console.log(temp, 'expression')
     input = temp[1]
+    // console.log(ops, '***', input, 'what is happening here')
     if (ops in env) {
       return sExpressions(ops, input, env)
     } else if (ops === 'define') {
@@ -155,13 +158,17 @@ function defineExp (input, env) { // define expression handling
   input = input.substr(result1[0].length)
   if (input[0] !== ')') {
     result2 = programParser(input)
-    [inner[result1[1]], input] = result2[0]
+    // console.log(result2, 'defineExp', input)
+    inner[result1[1]] = result2[0]
+    input = result2[1]
   }
   env = update([env, inner])
+  // console.log(result2, 'defineExp', input.substr(1))
   return ['', input.substr(1), env]
 }
 
 function lambdaExp (args, env = globalScope) { // lambda expression handling
+  // console.log(args[1], 'when does this run?')
   return [function (input, env = globalScope) {
     let inner = local([args[0], input])
     return programParser(args[1], update([env, inner]))[0]
@@ -200,7 +207,7 @@ function userDef (input, env = globalScope) { // User defined values handling
 
 function programParser (input, env = globalScope) {   // solves everything
   let result
-  // console.log(input, 'programParser')
+  // console.log('programParser', input)
   if (spaceParser(input) !== null) {
     input = spaceParser(input)[1]
   }
@@ -215,6 +222,7 @@ function programParser (input, env = globalScope) {   // solves everything
     result = userDef(input, env)
     env = result[2]
   }
+  // console.log(result[0], 'programParser OOPS!!!')
   input = result[1]
   if (result[0] === undefined) {
     return ['', input, env]
@@ -227,8 +235,8 @@ function programParser (input, env = globalScope) {   // solves everything
 // console.log(expression('(* r r)'))
 // console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
 // console.log(lisp('(define fib (lambda (n) (if (< n 2) (* 1 1) (+ (fib (- n 1)) (fib (- n 2)))))) (fib 10)'))
-// console.log(lisp(`(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1))))))
-//  (fact 40)`))
+console.log(lisp(`(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1))))))
+  (fact 50)`))
 // console.log(lisp('(define twice (lambda (x) (* 2 x))) (twice 7)'))
 // console.log(lambdaParser('(r) (* r r)) (+ 1 3)'))
 // console.log(programParser('(begin (define r 2) (* r r))'))  //,
