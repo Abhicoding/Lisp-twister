@@ -108,7 +108,7 @@ const lib = { '+': array => array.reduce((a, b) => a + b), // Inbuilt function l
 const globalScope = lib  // Initiates globalScope environment
 
 function lisp (input) {   // Initiates program
-  console.log(input)
+  // console.log(input)
   input = programParser(input)
   while (input[1]) {
     input = programParser(input[1], input[2])
@@ -229,6 +229,8 @@ function programParser (input, env = globalScope) {   // solves everything
   }
   return [result[0], input, env]
 }
+
+exports.interpret = lisp
 // console.log(programParser('( + 1 3)'))
 // console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
 // console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))

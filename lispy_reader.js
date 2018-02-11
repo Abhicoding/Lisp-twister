@@ -1,4 +1,4 @@
-const interpreter = require('./lispy.js')
+const interpreter = require('./lisp_.js')
 
 const fs = require('fs')
 
