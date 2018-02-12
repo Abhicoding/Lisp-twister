@@ -1,13 +1,13 @@
-const readline = require('readline')
+// const readline = require('readline')
 const interpreter = require('./lisp_.js')
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-})
+const repl = require('repl')
+// const { Translator } = require('translator');
 
-rl.question('lisp>> ', (answer) => {
-  // TODO: Log the answer in a database
-  console.log(`${interpreter.interpret(answer)}`)
-  rl.close()
-})
+// const myTranslator = new Translator('en', 'fr');
+
+function myEval (cmd, context, filename, callback) {
+  callback(null, console.log(interpreter.interpret(cmd)[0]))
+}
+
+repl.start({ prompt: '> ', eval: myEval })

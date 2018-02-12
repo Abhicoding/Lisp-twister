@@ -15,14 +15,6 @@ function boolParser (input) {  // parses booleans
   return null
 }
 
-function stringParser (input) {  // parses strings
-  let reg = /^\'\S+/, parseOut = input.match(reg)
-  if (parseOut) {
-    return [parseOut[0].slice(1), input.slice(parseOut[0].length)]
-  }
-  return null
-}
-
 function spaceParser (input) {  // parses spaces
   let reg = /^\s+/
   if (input.match(reg) !== null) {
@@ -103,7 +95,8 @@ const lib = { '+': array => array.reduce((a, b) => a + b), // Inbuilt function l
   'max': array => Math.max(...array),
   'min': array => Math.min(...array),
   'begin': array => array.pop(),
-  'print': array => console.log(array.join(''))
+  'print': array => console.log(array.join(''))/*,
+  'quote': array => console.log(array[0]) */
 }
 const globalScope = lib  // Initiates globalScope environment
 
@@ -133,7 +126,9 @@ function expression (input, env = globalScope) { // Expression programParseruato
       return lambdaExp(input, env)
     } else if (ops === 'if') {
       return ifExp(input, env)
-    }
+    } /* else if (ops === 'quote') {
+      return console.log(input,,env)
+    } */
   }
   return null
 }
@@ -230,15 +225,15 @@ function programParser (input, env = globalScope) {   // solves everything
   return [result[0], input, env]
 }
 
-exports.interpret = lisp
-// console.log(programParser('( + 1 3)'))
+exports.interpret = programParser
+// console.log(lisp('(- 1 3)'))
 // console.log(expression('(lambda (a b c) (* 4 (+ 1 2)))')([0, 1, 2]))
 // console.log(lisp('(define square (lambda (r) (* r r))) (square 7)'))
 // console.log(expression('(* r r)'))
 // console.log(lisp('(if (< 3 4) (+ 1 3) (* 2 3))'))
 // console.log(lisp('(define fib (lambda (n) (if (< n 2) (* 1 1) (+ (fib (- n 1)) (fib (- n 2)))))) (fib 10)'))
-console.log(lisp(`(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1))))))
-  (fact 50)`))
+// console.log(lisp(`(define fact (lambda (n) (if (<= n 1) (* 1 1) (* n (fact (- n 1))))))
+//  (fact 50)`))
 // console.log(lisp('(define twice (lambda (x) (* 2 x))) (twice 7)'))
 // console.log(lambdaParser('(r) (* r r)) (+ 1 3)'))
 // console.log(programParser('(begin (define r 2) (* r r))'))  //,
